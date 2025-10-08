@@ -69,9 +69,9 @@
           },
        "legend": {
             "title": "Age-standardised rate(per 100,000)",
-            "titleFontSize": 10,        
-            "labelFontSize": 8          
-  }
+            "titleFontSize": 10,         
+            "labelFontSize": 8         
+      }
         },
         "tooltip": [
           {"field": "properties.STE_NAME21", "type": "nominal", "title": "State/Territory"},
@@ -82,4 +82,12 @@
       }
     }
   ]
+}
+
+
+
+
+
+
+
 }
