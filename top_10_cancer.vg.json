@@ -1,0 +1,36 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {"text": "Top 10 Cancer Types by Incidence (Totals)"},
+  "width": 800,
+  "height": 440,
+
+  "data": { "url": "cancer_types.csv", "format": {"type": "csv"} },
+
+  "transform": [
+    { "calculate": "toNumber(datum.cases)", "as": "cases_num" },
+
+    { "aggregate": [{"op": "sum", "field": "cases_num", "as": "cases_sum"}],
+      "groupby": ["cancer"] },
+
+    { "window": [{"op": "rank", "as": "rk"}],
+      "sort": [{"field": "cases_sum", "order": "descending"}] },
+
+    { "filter": "datum.rk <= 10" }
+  ],
+
+  "mark": {"type": "bar"},
+
+  "encoding": {
+    "y": {"field": "cancer", "type": "nominal", "sort": "-x", "title": "Cancer type"},
+    "x": {"field": "cases_sum", "type": "quantitative", "title": "Total cases"},
+    "tooltip": [
+      {"field": "cancer", "title": "Cancer type"},
+      {"field": "cases_sum", "type": "quantitative", "title": "Cases"}
+    ]
+  },
+
+  "config": {
+    "axis": {"labelFontSize": 11, "titleFontSize": 12},
+    "title": {"fontSize": 16}
+  }
+}
