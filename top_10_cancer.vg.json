@@ -1,6 +1,6 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-  "title": {"text": "Top 10 Cancer Types by Incidence (Totals) In 2021"},
+  "title": {"text": "Top 15 Cancer Types by Incidence (Totals) In 2021"},
   "width": 800,
   "height": 440,
 
