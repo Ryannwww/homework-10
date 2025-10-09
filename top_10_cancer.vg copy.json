@@ -1,0 +1,63 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {"text": "Top 15 Cancer Types by Incidence (Totals) In 2021"},
+  "width": 800,
+  "height": 440,
+
+  "data": {
+    "url": "https://raw.githubusercontent.com/Ryannwww/homework-10/main/cancer_types.csv",
+    "format": {"type": "csv"}
+  },
+
+  "params": [
+    {
+      "name": "MinCases",
+      "value": 0,
+      "bind": {
+        "input": "range",
+        "min": 0,
+        "max": 30000,
+        "step": 1000,
+        "name": "Cases numbers: "
+      }
+    }
+  ],
+
+  "transform": [
+    { "calculate": "trim(datum['Row Labels'])", "as": "label" },
+    { "calculate": "replace(datum['Grand Total'], /,/g, '')", "as": "cases_str" },
+    { "calculate": "toNumber(datum.cases_str)", "as": "cases_num" },
+
+    { "filter": "datum.label !== 'Grand Total' && isFinite(datum.cases_num) && datum.label !== ''" },
+
+    { "filter": "datum.cases_num >= MinCases" },
+
+    {
+      "window": [{"op": "rank", "as": "rk"}],
+      "sort": [{"field": "cases_num", "order": "descending"}]
+    },
+    { "filter": "datum.rk <= 15" }
+  ],
+
+  "mark": "bar",
+
+  "encoding": {
+    "y": { "field": "label", "type": "nominal", "title": "Cancer type", "sort": "-x" },
+    "x": {
+      "field": "cases_num",
+      "type": "quantitative",
+      "title": "Total cases",
+      "scale": {"domainMin": 0}
+    },
+    "tooltip": [
+      {"field": "label", "title": "Cancer type"},
+      {"field": "cases_num", "type": "quantitative", "title": "Cases"}
+    ]
+  },
+
+  "config": {
+    "axis": {"labelFontSize": 11, "titleFontSize": 12},
+    "title": {"fontSize": 16},
+    "numberFormat": ","
+  }
+}
