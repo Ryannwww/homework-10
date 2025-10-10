@@ -29,134 +29,157 @@
   </div>
 
   <script>
-    const sharedConfig = {
-      font: "Inter",
-      title:  { font: "Inter", fontSize: 20, fontWeight: 600 },
-      axis:   { labelFont: "Inter", titleFont: "Inter", labelFontSize: 11, titleFontSize: 12 },
-      legend: { labelFont: "Inter", titleFont: "Inter", labelFontSize: 10, titleFontSize: 12 }
-    };
-
-
+    // --- Choropleth ---
     const mapSpec = {
-      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-      "title": {"text": "Cancer Mortality in Australia by State"},
-      "width": 860,
-      "height": 520,
-      "projection": {"type": "equalEarth"},
-      "params": [
-        {
-          "name": "yearSelected",
-          "value": 2020,
-          "bind": {"input": "range", "min": 2010, "max": 2020, "step": 1, "name": "Year: "}
-        }
-      ],
-      "layer": [
-        /* light basemap so the country outline is always visible */
-        {
-          "data": {
-            "url": "https://raw.githubusercontent.com/Ryannwww/3179-homework-9/main/cancer_mortality.json",
-            "format": {"type": "topojson", "feature": "CED_2021_AUST_GDA94"}
-          },
-          "mark": {"type": "geoshape", "fill": "#f3f6fa", "stroke": "#b8c4d7"}
-        },
-        /* choropleth (lookup -> flatten -> filter) */
-        {
-          "data": {
-            "url": "https://raw.githubusercontent.com/Ryannwww/3179-homework-9/main/cancer_mortality.json",
-            "format": {"type": "topojson", "feature": "CED_2021_AUST_GDA94"}
-          },
-          "transform": [
-            { "calculate": "lower(trim(datum.properties.STE_NAME21))", "as": "state_key" },
-            {
-              "lookup": "state_key",
-              "from": {
-                "data": {
-                  "url": "https://raw.githubusercontent.com/Ryannwww/3179-homework-9/main/cancer_mortality_clean.csv",
-                  "format": {"type": "csv"}
-                },
-                "key": "state"
-              },
-              "as": "rows"
-            },
-            { "flatten": ["rows"] },
-            { "calculate": "lower(trim(datum.rows.state))", "as": "state_key_csv" },
-            { "filter": "datum.state_key == datum.state_key_csv" },
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "title": {"text": "Cancer Mortality in Australia by State"},
+  "width": 860,
+  "height": 520,
+  "projection": {"type": "equalEarth"},
 
-            { "calculate": "toNumber(datum.rows.year)", "as": "year_num" },
-            { "calculate": "trim(datum.rows.sex)", "as": "sex_clean" },
-            { "calculate": "toNumber(datum.rows['deaths count'])", "as": "deaths" },
-            {
-              "calculate": "datum.rows['Age-standardised rate\\n2024 Australian population \\n(per 100,000']",
-              "as": "asr_persons"
+  "params": [
+    {
+      "name": "yearSelected",
+      "value": 2020,
+      "bind": {"input": "range", "min": 2010, "max": 2020, "step": 1, "name": "Year: "}
+    }
+    
+  ],
+
+  "layer": [
+
+    {
+      "data": {
+        "url": "https://raw.githubusercontent.com/Ryannwww/3179-homework-9/main/cancer_mortality.json",
+        "format": {"type": "topojson", "feature": "CED_2021_AUST_GDA94"}
+      },
+      "mark": {"type": "geoshape", "fill": "#f3f6fa", "stroke": "#b8c4d7"}
+    },
+
+    {
+      "data": {
+        "url": "https://raw.githubusercontent.com/Ryannwww/3179-homework-9/main/cancer_mortality.json",
+        "format": {"type": "topojson", "feature": "CED_2021_AUST_GDA94"}
+      },
+      "transform": [
+        {
+          "lookup": "properties.STE_NAME21",
+          "from": {
+            "data": {
+              "url": "https://raw.githubusercontent.com/Ryannwww/3179-homework-9/main/cancer_mortality_clean.csv",
+              "format": {"type": "csv"}
             },
-            { "filter": "datum.sex_clean == 'Persons' && datum.year_num == yearSelected" }
-          ],
-          "mark": { "type": "geoshape", "stroke": "white", "strokeWidth": 1 },
-          "encoding": {
-            "color": {
-              "field": "asr_persons",
-              "type": "quantitative",
-              "title": "Age-standardised rate (per 100,000)",
-              "scale": {
-                "type": "threshold",
-                "domain": [190, 210, 230],                 /* 4 bands; expand if you prefer */
-                "range": ["#fdbe85","#fd8d3c","#e6550d","#a63603"]
-              },
-              "legend": { "titleFontSize": 10, "labelFontSize": 8 }
-            },
-            "tooltip": [
-              {"field": "properties.STE_NAME21", "title": "State/Territory"},
-              {"field": "year_num", "type": "quantitative", "title": "Year"},
-              {"field": "asr_persons", "type": "quantitative", "title": "ASR", "format": ".1f"},
-              {"field": "deaths", "type": "quantitative", "title": "Deaths"}
+            "key": "state",
+            "fields": [
+              "year",
+              "sex",
+              "deaths count",
+              "Age-standardised rate\n2024 Australian population \n(per 100,000"
             ]
           }
-        }
-      ],
-      "config": sharedConfig
-    };
+        },
 
+        { "calculate": "toNumber(datum.year)", "as": "year_num" },
+        { "calculate": "trim(datum.sex)", "as": "sex_clean" },
+        { "calculate": "toNumber(datum['deaths count'])", "as": "deaths" },
+        {
+          "calculate": "datum['Age-standardised rate\\n2024 Australian population \\n(per 100,000']",
+          "as": "asr_persons"
+        },
+        { "filter": "datum.year_num == yearSelected" }
+      ],
+      "mark": { "type": "geoshape", "stroke": "white", "strokeWidth": 1, "strokeOpacity": 1 },
+      "encoding": {
+        "color": {
+          "field": "asr_persons",
+          "type": "quantitative",
+          "title": "Age-standardised rate 2024 Australian population (per 100,000)",
+          "scale": {
+            "type": "threshold",
+            "domain": [180, 190, 200, 210, 220, 230, 260],
+            "range": ["#fdbe85", "#fd8d3c", "#e6550d", "#a63603"]
+          },
+       "legend": {
+            "title": "Age-standardised rate(per 100,000)",
+            "titleFontSize": 10,         
+            "labelFontSize": 8         
+      }
+        },
+        "tooltip": [
+          {"field": "properties.STE_NAME21", "type": "nominal", "title": "State/Territory"},
+          {"field": "year_num", "type": "quantitative", "title": "Year"},
+          {"field": "asr_persons", "type": "quantitative", "title": "Age-standardised rate", "format": ".1f"},
+          {"field": "deaths", "type": "quantitative", "title": "Deaths"}
+        ]
+      }
+    }
+  ]
+};
 
     const barSpec = {
       "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
       "title": {"text": "Top 15 Cancer Types by Incidence (Totals)"},
       "width": 860,
       "height": 440,
+
       "data": {
         "url": "https://raw.githubusercontent.com/Ryannwww/homework-10/main/cancer_types.csv",
         "format": {"type": "csv"}
       },
+
       "params": [
         {
           "name": "MinCases",
           "value": 0,
-          "bind": { "input": "range", "min": 0, "max": 30000, "step": 1000, "name": "Minimum cases: " }
+          "bind": {
+            "input": "range",
+            "min": 0,
+            "max": 30000,  
+            "step": 1000,
+            "name": "Minimum cases: "
+          }
         }
       ],
+
       "transform": [
         { "calculate": "trim(datum['Row Labels'])", "as": "label" },
-        { "calculate": "replace(datum['Grand Total'], regexp(',', 'g'), '')", "as": "cases_str" },
+        { "calculate": "replace(datum['Grand Total'], /,/g, '')", "as": "cases_str" },
         { "calculate": "toNumber(datum.cases_str)", "as": "cases_num" },
 
         { "filter": "datum.label !== 'Grand Total' && isFinite(datum.cases_num) && datum.label !== ''" },
         { "filter": "datum.cases_num >= MinCases" },
 
-        { "window": [{"op": "rank", "as": "rk"}], "sort": [{"field": "cases_num", "order": "descending"}] },
+        {
+          "window": [{"op": "rank", "as": "rk"}],
+          "sort": [{"field": "cases_num", "order": "descending"}]
+        },
         { "filter": "datum.rk <= 15" }
       ],
+
       "mark": "bar",
+
       "encoding": {
         "y": { "field": "label", "type": "nominal", "title": "Cancer type", "sort": "-x" },
-        "x": { "field": "cases_num", "type": "quantitative", "title": "Total cases", "scale": {"domainMin": 0} },
+        "x": {
+          "field": "cases_num",
+          "type": "quantitative",
+          "title": "Total cases",
+          "scale": {"domainMin": 0}
+        },
         "tooltip": [
           {"field": "label", "title": "Cancer type"},
           {"field": "cases_num", "type": "quantitative", "title": "Cases"}
         ]
       },
-      "config": sharedConfig
+
+      "config": {
+        "axis": {"labelFontSize": 11, "titleFontSize": 12},
+        "title": {"fontSize": 16},
+        "numberFormat": ","
+      }
     };
 
-    /* Embed both charts */
+    // Embed both
     vegaEmbed("#visMap", mapSpec, {mode: "vega-lite"}).catch(console.error);
     vegaEmbed("#visBar", barSpec, {mode: "vega-lite"}).catch(console.error);
   </script>
