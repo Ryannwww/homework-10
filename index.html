@@ -1,80 +1,34 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="utf-8" />
-  <title>AU Cancer Mortality — Choropleth + Top Cancers</title>
-
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- Picked Inter (400, 600). Change if you want another font -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-
-  <!-- Vega libraries -->
+  <title>AU Cancer Mortality Choropleth + Top 10 Bar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400..900;1,400..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
-
-  <!-- Page styles -->
   <style>
-    :root { --gap: 24px; --section-gap: 56px; }
-    body { font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; font-size: 16px; color: #111; }
+    body { font-family: system-ui, Arial, sans-serif; margin: 24px; }
     .wrap { max-width: 1100px; margin-inline: auto; }
-    h1 { margin: 0 0 12px; font-size: 24px; font-weight: 600; }
-    h2 { margin: 0 0 8px; font-size: 20px; font-weight: 600; }
-    p  { line-height: 1.5; }
-
-    /* Two-column layout: chart left, notes right */
-    .row { display: flex; gap: var(--gap); align-items: flex-start; margin-bottom: var(--section-gap); }
-    .chart { flex: 2 1 0; }
-    .side  { flex: 1 1 0; font-size: 14px; line-height: 1.5; color: #444;
-             padding: 12px 14px; border: 1px solid #eee; border-radius: 8px; background: #fafafa; }
-    .side h3 { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
-    .side p  { margin: 0 0 10px; }
-
-    /* Extra spacing between standalone blocks if you add more later */
     .viz { margin: 20px 0 24px; }
     .viz + h2 { margin-top: 72px; }
-
-    /* Vega tooltip font */
-    .vega-tooltip { font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; font-size: 12px; }
-
-    /* Mobile: stack columns */
-    @media (max-width: 900px) {
-      .row { flex-direction: column; }
-    }
+    h2 { margin: 0 0 8px; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1>AU Cancer Mortality — Choropleth + Top Cancers</h1>
-
-    <!-- Section 1: Choropleth + notes -->
     <h2>Cancer Mortality (ASR per 100,000) — Australia by State</h2>
-    <div class="row">
-      <div id="visMap" class="chart"></div>
-      <aside class="side">
-        <h3>Notes</h3>
-        <p>Use the slider to compare ASR across years (2010–2020). Darker shades indicate higher rates.</p>
-        <p>ASR is age-standardised to the 2024 Australian population, per 100,000.</p>
-        <p>Boundaries from ABS; data joined by state name.</p>
-      </aside>
-    </div>
-
-    <!-- Section 2: Bar chart + notes -->
-    <h2>Top 15 Cancer Types by Incidence (Totals)</h2>
-    <div class="row">
-      <div id="visBar" class="chart"></div>
-      <aside class="side">
-        <h3>Interpretation</h3>
-        <p>Bars are ranked by total cases. Use the slider to set a minimum threshold.</p>
-        <p>Values come from “Grand Total” in the source table.</p>
-      </aside>
-    </div>
+    <div id="visMap" class="viz"></div>
+      <p>Use the slider to compare ASR across years (2010 to 2020). Darker shades indicate higher rates.</p>
+      <p>ASR is age-standardised to the 2024 Australian population, per 100,000.</p>
+    <h2>Top 10 Cancer Types by Incidence (Totals)</h2>
+    <div id="visBar" class="viz"></div>
+      <p>Use the slider to increase the total number of cases, to see the difference in cases between cancer types</p>
+      <p>Prostate cancer has the most confirmed cases in the year 2021 followed by breast cancer</p>
   </div>
 
   <script>
-    /* Shared font configuration for both charts */
     const sharedConfig = {
       font: "Inter",
       title:  { font: "Inter", fontSize: 20, fontWeight: 600 },
@@ -82,7 +36,7 @@
       legend: { labelFont: "Inter", titleFont: "Inter", labelFontSize: 10, titleFontSize: 12 }
     };
 
-    /* ---------- Choropleth (year slider works for all years) ---------- */
+
     const mapSpec = {
       "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
       "title": {"text": "Cancer Mortality in Australia by State"},
@@ -162,7 +116,7 @@
       "config": sharedConfig
     };
 
-    /* ---------- Bar chart (parse Grand Total with commas, top 15) ---------- */
+
     const barSpec = {
       "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
       "title": {"text": "Top 15 Cancer Types by Incidence (Totals)"},
