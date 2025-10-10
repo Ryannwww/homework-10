@@ -1,25 +1,210 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<script src="https://cdn.jsdelivr.net/npm/vega@5.20.2"></script>
-<script src="https://cdn.jsdelivr.net/npm/vega-lite@5.1.0"></script>
-<script src="https://cdn.jsdelivr.net/npm/vega-embed@6.17.0"></script>
-<script src="vega_lite_vis.js"></script>
-<title>AU Cancer Mortality Map </title>
+  <meta charset="utf-8" />
+  <title>AU Cancer Mortality — Choropleth + Top Cancers</title>
 
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Picked Inter (400, 600). Change if you want another font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Vega libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+
+  <!-- Page styles -->
+  <style>
+    :root { --gap: 24px; --section-gap: 56px; }
+    body { font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; font-size: 16px; color: #111; }
+    .wrap { max-width: 1100px; margin-inline: auto; }
+    h1 { margin: 0 0 12px; font-size: 24px; font-weight: 600; }
+    h2 { margin: 0 0 8px; font-size: 20px; font-weight: 600; }
+    p  { line-height: 1.5; }
+
+    /* Two-column layout: chart left, notes right */
+    .row { display: flex; gap: var(--gap); align-items: flex-start; margin-bottom: var(--section-gap); }
+    .chart { flex: 2 1 0; }
+    .side  { flex: 1 1 0; font-size: 14px; line-height: 1.5; color: #444;
+             padding: 12px 14px; border: 1px solid #eee; border-radius: 8px; background: #fafafa; }
+    .side h3 { margin: 0 0 8px; font-size: 16px; font-weight: 600; }
+    .side p  { margin: 0 0 10px; }
+
+    /* Extra spacing between standalone blocks if you add more later */
+    .viz { margin: 20px 0 24px; }
+    .viz + h2 { margin-top: 72px; }
+
+    /* Vega tooltip font */
+    .vega-tooltip { font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; font-size: 12px; }
+
+    /* Mobile: stack columns */
+    @media (max-width: 900px) {
+      .row { flex-direction: column; }
+    }
+  </style>
 </head>
 <body>
-<div id="choropleth_map"></div>
-<script type="text/javascript">
+  <div class="wrap">
+    <h1>AU Cancer Mortality — Choropleth + Top Cancers</h1>
 
-  var spec2 = "cancer_prevalance_map.vg.json";
-  vegaEmbed('#choropleth_map', spec2).then(function(result) {
-    // Access the Vega view instance (https://vega.github.io/vega/docs/api/view/) as result.view
-  }).catch(console.error);
-</script>
+    <!-- Section 1: Choropleth + notes -->
+    <h2>Cancer Mortality (ASR per 100,000) — Australia by State</h2>
+    <div class="row">
+      <div id="visMap" class="chart"></div>
+      <aside class="side">
+        <h3>Notes</h3>
+        <p>Use the slider to compare ASR across years (2010–2020). Darker shades indicate higher rates.</p>
+        <p>ASR is age-standardised to the 2024 Australian population, per 100,000.</p>
+        <p>Boundaries from ABS; data joined by state name.</p>
+      </aside>
+    </div>
 
+    <!-- Section 2: Bar chart + notes -->
+    <h2>Top 15 Cancer Types by Incidence (Totals)</h2>
+    <div class="row">
+      <div id="visBar" class="chart"></div>
+      <aside class="side">
+        <h3>Interpretation</h3>
+        <p>Bars are ranked by total cases. Use the slider to set a minimum threshold.</p>
+        <p>Values come from “Grand Total” in the source table.</p>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    /* Shared font configuration for both charts */
+    const sharedConfig = {
+      font: "Inter",
+      title:  { font: "Inter", fontSize: 20, fontWeight: 600 },
+      axis:   { labelFont: "Inter", titleFont: "Inter", labelFontSize: 11, titleFontSize: 12 },
+      legend: { labelFont: "Inter", titleFont: "Inter", labelFontSize: 10, titleFontSize: 12 }
+    };
+
+    /* ---------- Choropleth (year slider works for all years) ---------- */
+    const mapSpec = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "title": {"text": "Cancer Mortality in Australia by State"},
+      "width": 860,
+      "height": 520,
+      "projection": {"type": "equalEarth"},
+      "params": [
+        {
+          "name": "yearSelected",
+          "value": 2020,
+          "bind": {"input": "range", "min": 2010, "max": 2020, "step": 1, "name": "Year: "}
+        }
+      ],
+      "layer": [
+        /* light basemap so the country outline is always visible */
+        {
+          "data": {
+            "url": "https://raw.githubusercontent.com/Ryannwww/3179-homework-9/main/cancer_mortality.json",
+            "format": {"type": "topojson", "feature": "CED_2021_AUST_GDA94"}
+          },
+          "mark": {"type": "geoshape", "fill": "#f3f6fa", "stroke": "#b8c4d7"}
+        },
+        /* choropleth (lookup -> flatten -> filter) */
+        {
+          "data": {
+            "url": "https://raw.githubusercontent.com/Ryannwww/3179-homework-9/main/cancer_mortality.json",
+            "format": {"type": "topojson", "feature": "CED_2021_AUST_GDA94"}
+          },
+          "transform": [
+            { "calculate": "lower(trim(datum.properties.STE_NAME21))", "as": "state_key" },
+            {
+              "lookup": "state_key",
+              "from": {
+                "data": {
+                  "url": "https://raw.githubusercontent.com/Ryannwww/3179-homework-9/main/cancer_mortality_clean.csv",
+                  "format": {"type": "csv"}
+                },
+                "key": "state"
+              },
+              "as": "rows"
+            },
+            { "flatten": ["rows"] },
+            { "calculate": "lower(trim(datum.rows.state))", "as": "state_key_csv" },
+            { "filter": "datum.state_key == datum.state_key_csv" },
+
+            { "calculate": "toNumber(datum.rows.year)", "as": "year_num" },
+            { "calculate": "trim(datum.rows.sex)", "as": "sex_clean" },
+            { "calculate": "toNumber(datum.rows['deaths count'])", "as": "deaths" },
+            {
+              "calculate": "datum.rows['Age-standardised rate\\n2024 Australian population \\n(per 100,000']",
+              "as": "asr_persons"
+            },
+            { "filter": "datum.sex_clean == 'Persons' && datum.year_num == yearSelected" }
+          ],
+          "mark": { "type": "geoshape", "stroke": "white", "strokeWidth": 1 },
+          "encoding": {
+            "color": {
+              "field": "asr_persons",
+              "type": "quantitative",
+              "title": "Age-standardised rate (per 100,000)",
+              "scale": {
+                "type": "threshold",
+                "domain": [190, 210, 230],                 /* 4 bands; expand if you prefer */
+                "range": ["#fdbe85","#fd8d3c","#e6550d","#a63603"]
+              },
+              "legend": { "titleFontSize": 10, "labelFontSize": 8 }
+            },
+            "tooltip": [
+              {"field": "properties.STE_NAME21", "title": "State/Territory"},
+              {"field": "year_num", "type": "quantitative", "title": "Year"},
+              {"field": "asr_persons", "type": "quantitative", "title": "ASR", "format": ".1f"},
+              {"field": "deaths", "type": "quantitative", "title": "Deaths"}
+            ]
+          }
+        }
+      ],
+      "config": sharedConfig
+    };
+
+    /* ---------- Bar chart (parse Grand Total with commas, top 15) ---------- */
+    const barSpec = {
+      "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+      "title": {"text": "Top 15 Cancer Types by Incidence (Totals)"},
+      "width": 860,
+      "height": 440,
+      "data": {
+        "url": "https://raw.githubusercontent.com/Ryannwww/homework-10/main/cancer_types.csv",
+        "format": {"type": "csv"}
+      },
+      "params": [
+        {
+          "name": "MinCases",
+          "value": 0,
+          "bind": { "input": "range", "min": 0, "max": 30000, "step": 1000, "name": "Minimum cases: " }
+        }
+      ],
+      "transform": [
+        { "calculate": "trim(datum['Row Labels'])", "as": "label" },
+        { "calculate": "replace(datum['Grand Total'], regexp(',', 'g'), '')", "as": "cases_str" },
+        { "calculate": "toNumber(datum.cases_str)", "as": "cases_num" },
+
+        { "filter": "datum.label !== 'Grand Total' && isFinite(datum.cases_num) && datum.label !== ''" },
+        { "filter": "datum.cases_num >= MinCases" },
+
+        { "window": [{"op": "rank", "as": "rk"}], "sort": [{"field": "cases_num", "order": "descending"}] },
+        { "filter": "datum.rk <= 15" }
+      ],
+      "mark": "bar",
+      "encoding": {
+        "y": { "field": "label", "type": "nominal", "title": "Cancer type", "sort": "-x" },
+        "x": { "field": "cases_num", "type": "quantitative", "title": "Total cases", "scale": {"domainMin": 0} },
+        "tooltip": [
+          {"field": "label", "title": "Cancer type"},
+          {"field": "cases_num", "type": "quantitative", "title": "Cases"}
+        ]
+      },
+      "config": sharedConfig
+    };
+
+    /* Embed both charts */
+    vegaEmbed("#visMap", mapSpec, {mode: "vega-lite"}).catch(console.error);
+    vegaEmbed("#visBar", barSpec, {mode: "vega-lite"}).catch(console.error);
+  </script>
 </body>
 </html>
