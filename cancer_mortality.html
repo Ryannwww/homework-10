@@ -3,13 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <title>AU Cancer Mortality Choropleth + Top 10 Bar</title>
+  <link href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400..900;1,400..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
   <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
   <style>
     body { font-family: system-ui, Arial, sans-serif; margin: 24px; }
     .wrap { max-width: 1100px; margin-inline: auto; }
-    .viz { margin: 20px 0 48px; }
+    .viz { margin: 20px 0 24px; }
+    .viz + h2 { margin-top: 72px; }
     h2 { margin: 0 0 8px; }
   </style>
 </head>
@@ -17,9 +20,12 @@
   <div class="wrap">
     <h2>Cancer Mortality (ASR per 100,000) — Australia by State</h2>
     <div id="visMap" class="viz"></div>
-
+      <p>Use the slider to compare ASR across years (2010 to 2020). Darker shades indicate higher rates.</p>
+      <p>ASR is age-standardised to the 2024 Australian population, per 100,000.</p>
     <h2>Top 10 Cancer Types by Incidence (Totals)</h2>
     <div id="visBar" class="viz"></div>
+      <p>Use the slider to increase the total number of cases, to see the difference in cases between cancer types</p>
+      <p>Prostate cancer has the most confirmed cases in the year 2021 followed by breast cancer</p>
   </div>
 
   <script>
